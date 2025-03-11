@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Copy, Loading, CheckOne } from "@icon-park/vue-next";
-import type { Theme } from "@icon-park/vue-next/lib/runtime";
-import { ref } from "vue";
+import {Copy, Loading, CheckOne} from "@icon-park/vue-next";
+import type {Theme} from "@icon-park/vue-next/lib/runtime";
+import {ref} from "vue";
 
 const porps = defineProps<{ content: string }>();
 const btnConfig: {
@@ -14,53 +14,56 @@ const btnConfig: {
   theme: "outline",
 };
 const btnTips = {
-  copy: "复制全文",
+  copy: "复制内容",
   loading: "",
-  success: "已复制到剪贴板！",
-  error: "复制失败！",
+  success: "复制成功",
+  error: "复制失败",
 };
 const btnStatus = ref<"copy" | "loading" | "success" | "error">("copy");
 
 const copyToClipboard = (content: string = porps.content) => {
   btnStatus.value = "loading";
+  // 文本
   navigator.clipboard
-    .writeText(content)
-    .then(() => setTimeout(() => (btnStatus.value = "success"), 150))
-    .catch(() => (btnStatus.value = "error"))
-    .finally(() => setTimeout(() => (btnStatus.value = "copy"), 1500));
+      .writeText(content)
+      .then(() => setTimeout(() => (btnStatus.value = "success"), 150))
+      .catch(() => (btnStatus.value = "error"))
+      .finally(() => setTimeout(() => (btnStatus.value = "copy"), 1500));
+
+
 };
 </script>
 
 <template>
   <div class="flex items-center cursor-pointer" @click="copyToClipboard()">
     <copy
-      v-show="btnStatus === 'copy'"
-      :theme="btnConfig.theme"
-      :size="btnConfig.size"
-      :fill="btnConfig.fill"
+        v-show="btnStatus === 'copy'"
+        :theme="btnConfig.theme"
+        :size="btnConfig.size"
+        :fill="btnConfig.fill"
     />
     <loading
-      class="rotate"
-      v-show="btnStatus === 'loading'"
-      :theme="btnConfig.theme"
-      :size="btnConfig.size"
-      :fill="btnConfig.fill"
+        class="rotate"
+        v-show="btnStatus === 'loading'"
+        :theme="btnConfig.theme"
+        :size="btnConfig.size"
+        :fill="btnConfig.fill"
     />
     <check-one
-      v-show="btnStatus === 'success'"
-      :theme="btnConfig.theme"
-      :size="btnConfig.size"
-      :fill="btnConfig.fill"
+        v-show="btnStatus === 'success'"
+        :theme="btnConfig.theme"
+        :size="btnConfig.size"
+        :fill="btnConfig.fill"
     />
     <close-one
-      v-show="btnStatus === 'error'"
-      :theme="btnConfig.theme"
-      :size="btnConfig.size"
-      :fill="btnConfig.fill"
+        v-show="btnStatus === 'error'"
+        :theme="btnConfig.theme"
+        :size="btnConfig.size"
+        :fill="btnConfig.fill"
     />
     <span class="text-xs ml-0.5 text-gray-500 leading-none">{{
-      btnTips[btnStatus]
-    }}</span>
+        btnTips[btnStatus]
+      }}</span>
   </div>
 </template>
 

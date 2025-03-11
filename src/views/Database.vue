@@ -37,7 +37,7 @@
         >
           查询
         </el-button>
-        <el-button type="primary" @click="showAddUserDialog = true">
+        <el-button type="primary" @click="openAddUserDialog">
           新增用户
         </el-button>
         <el-button type="danger" @click="clearAllUsers"> 清空用户库 </el-button>
@@ -156,10 +156,15 @@
             "
           >
             <el-button size="small" type="primary">选择图片</el-button>
-            <template #tip>
-              <div class="el-upload__tip">仅支持上传一张图片</div>
-            </template>
-          </el-upload>
+                  <template #tip>
+                   <div class="el-upload__tip">仅支持上传一张图片</div>
+                  </template>
+                  <div v-if="addUserForm.photoName" style="margin-left: 20px">
+                   {{ addUserForm.photoName }}
+             </div>
+            </el-upload>
+          <!-- 显示图片名字 -->
+
         </el-form-item>
       </el-form>
 
@@ -174,6 +179,16 @@
 </template>
 
 <script setup lang="ts">
+
+const openAddUserDialog = () => {
+  // 重置 addUserForm 的值
+  addUserForm.value = {
+    name: "",
+    photoName: '',
+    file: null
+  };
+  showAddUserDialog.value = true;
+};
 // 类型定义
 interface User {
   /*userId: string*/
@@ -216,6 +231,7 @@ const showAddUserDialog = ref(false);
 const addUserFormRef = ref<FormInstance | null>(null);
 const addUserForm = ref({
   name: "",
+  photoName: '', // 新增字段
   file: null,
 });
 const fileList = ref<UploadFile[]>([]);
@@ -255,26 +271,27 @@ const beforeUploadBase64 = (file: File, name: string) => {
   const reader = new FileReader();
   reader.onload = (e: any) => {
     const base64String = e.target.result.split(",")[1]; // 去掉 data URL 的前缀
-    handleUploadBase64(base64String, name);
+    handleUploadBase64(base64String, name,file);
   };
   reader.readAsDataURL(file);
 
   return false; // 阻止默认的上传行为
 };
 
-const handleUploadBase64 = async (base64String: string, name: string) => {
+const handleUploadBase64 = async (base64String: string, name: string,file: File) => {
   console.log("handleUploadBase64:", { base64String, name });
   if (!name) {
     ElMessage.error("用户名不能为空！");
     return;
   }
   // 确保 currentUser.value 被正确设置
-  currentUser.value = users.value.find(user => user.name === name);
-  if (!currentUser.value) {
-    ElMessage.error("用户未找到！");
-    return;
-  }
+
   try {
+    const requestData = {
+      imageBase64: base64String,
+      name: name,
+    };
+    console.log("Sending request data:", requestData); // 添加日志
     const response = await my_axios.post<{
       result: string;
       // id: string;
@@ -288,14 +305,16 @@ const handleUploadBase64 = async (base64String: string, name: string) => {
     console.log("Response data:", response.data);
 
     if (response.data.result) {
-      ElMessage.success("base64上传成功！");
-      if (!currentUser.value?.picId) {
-        currentUser.value.picId = [];
-      }
-      // 提取 result 对象中的 image_id 字段
-      const imageId = response.data.result.image_id;
-      currentUser.value.picId.push(imageId);
+
+      currentUser.value = {
+        name: addUserForm.name,
+        picId: [response.data.result.image_id],
+      };
+      addUserForm.value.photoName = file.name;
+      console.log("photoname:",addUserForm.photoName);
       ElMessage.success("上传成功！");
+
+      ElMessage.success("图片上传成功！");
     } else if (response.data.message && response.data.code) {
       ElMessage.error(response.data.message);
     } else {
@@ -497,6 +516,7 @@ const clearPictures = async (user: User) => {
     console.error("清空图片失败:", error);
     ElMessage.error("清空图片失败！");
   }
+  await fetchUsers();
 };
 
 const handleSizeChange = (newSize: number) => {
@@ -595,6 +615,7 @@ const handleAddUser = async () => {
       fileList.value = []; // 清空文件列表
     } else {
       ElMessage.success("用户新增成功！");
+      showAddUserDialog.value = false;
     }
     await fetchUsers();
   } catch (error) {
@@ -657,7 +678,8 @@ const handleCustomUpload = async (options: any) => {
     }
   } catch (error) {
     console.error("上传失败:", error);
-    ElMessage.error(error.response?.data?.error || "上传失败！");
+    const errorMessage = error.response?.data?.error || error.message || "上传失败！";
+    ElMessage.error(errorMessage);
   }
 };
 
@@ -675,6 +697,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.red-text {
+  color: red;
+}
+
 .layout {
   display: flex;
   min-height: 100vh;

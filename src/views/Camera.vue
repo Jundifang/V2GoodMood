@@ -1,5 +1,6 @@
 <template>
   <div class="layout">
+    <!-- 左侧导航栏 -->
     <div class="simple-sidebar">
       <div class="logo">
         <h2>V2GoodMood</h2>
@@ -11,9 +12,9 @@
           </el-icon>
           主页
         </router-link>
-        <router-link to="/database" class="nav-link">
+        <router-link to="/database" class="nav-link active">
           <el-icon>
-            <Management/>
+            <Document/>
           </el-icon>
           数据管理
         </router-link>
@@ -24,103 +25,120 @@
       <div class="camera-container">
         <div class="main-content">
           <!-- 左侧：用户信息 -->
-          <div class="image-section">
-            <div class="user-info-container">
-              <div class="user-info">
-                <h2 class="welcome-title">欢迎 {{ userName || '访客' }}</h2>
-                <p class="info-item">身份准确率：{{ user_probability || 'Unknown' }}</p>
-                <p class="info-item">性别：{{ userGender || 'Unknown' }}</p>
-                <p class="info-item">年龄：{{ userAgeLow || 'Unknown' }}-{{ userAgeHigh }}</p>
-                <p class="info-item">
-                  口罩状态：
-                  <span :class="['mask-status', getMaskStatusClass]">
-                    {{
-                      maskStatus === null ? 'Unknown' : (maskStatus === 'without_mask' ? '未佩戴口罩' : '已佩戴口罩')
-                    }}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <!-- 情绪识别结果框 -->
-            <div class="emotion-box">
-              <h4>情绪识别结果</h4>
-              <div v-if="emotionResult" class="emotion-content">
-                <p>{{ emotionResult }}</p>
-                <div class="emotion-image-container">
-                  <el-image :src="emotionPic" class="emotion-image"></el-image>
-                </div>
-              </div>
-              <div v-else class="emotion-placeholder">
-                等待分析结果...
-              </div>
+          <div class="user-info-section">
+            <div class="user-info">
+              <h2 class="welcome-title">欢迎 {{ userName || '(访✪ω✪客)' }} 🥳</h2>
+              <p class="info-item">身份准确率：{{ user_probability || 'Unknown' }}</p>
+              <p class="info-item">性别：{{ userGender || 'Unknown' }}</p>
+              <p class="info-item">年龄：{{ userAgeLow || 'Unknown' }}-{{ userAgeHigh }}</p>
+              <p class="info-item">
+                口罩状态：
+                <span :class="['mask-status', getMaskStatusClass]">
+                  {{
+                    maskStatus === null ? 'Unknown' : (maskStatus === 'without_mask' ? '未佩戴口罩' : '已佩戴口罩')
+                  }}
+                </span>
+              </p>
             </div>
           </div>
 
-          <!-- 右侧：AI对话 -->
-          <div class="ai-chat">
-            <div class="flex flex-col h-full">
-              <!-- 使用 sticky 而不是 fixed -->
-              <div
-                  class="flex flex-nowrap sticky w-full items-baseline top-0 px-6 py-4 bg-gray-100 z-10"
-              >
-                <div class="ml-4 text-sm text-gray-500 header ">
-                  情绪建议小助手
-                </div>
-                <!--                <div
-                                    class="ml-auto px-3 py-2 text-sm cursor-pointer hover:bg-white rounded-md"
-                                    @click="clickConfig()"
-                                >
-                                  设置
-                                </div>-->
-              </div>
-              <!-- 对话内容区域 -->
-              <div class="flex-1 mx-2 mt-20 mb-2" ref="chatListDom">
-                <div
-                    class="group flex flex-col px-4 py-3 hover:bg-slate-100 rounded-lg"
-                    v-for="(item, index) of messageList.filter(
-                    (v) => v.role !== 'system'
-                  )"
-                    :key="item.id || index"
-                >
-                  <!-- 使用 item.id 作为 key，如果不存在则使用 index -->
-                  <div class="flex justify-between items-center mb-2">
-                    <div class="font-bold">{{ roleAlias[item.role] }}：</div>
-                    <Copy
-                        class="invisible group-hover:visible"
-                        :content="item.content"
-                    />
-                  </div>
-                  <div>
-                    <div
-                        class="prose text-sm text-slate-600 leading-relaxed"
-                        v-if="item.content"
-                        v-html="md.render(item.content)"
-                    ></div>
-                    <Loding v-else/>
-                  </div>
-                </div>
-              </div>
-              <!-- 底部输入区域 -->
-              <div class="sticky bottom-0 w-full p-6 pb-8 bg-gray-100">
-                <div class="flex ">
-                  <input
-                      class="input rounded-lg "
-                      :type="isConfig ? 'password' : 'text'"
-                      :placeholder="isConfig ? 'sk-xxxxxxxxxx' : '你有什么困惑呀'"
-                      v-model="messageContent"
-                      @keydown.enter="isTalking || sendOrSave()"
-                  />
-                  <button
-                      class="btn"
-                      :disabled="isTalking"
-                      @click="sendOrSave()"
-                  >
-                    {{ isConfig ? "保存" : "发送" }}
-                  </button>
-                </div>
+          <!-- 情绪识别结果框 -->
+          <div class="emotion-box">
+            <h4>情绪识别结果📄</h4>
+            <div v-if="emotionResult" class="emotion-content">
+              <p>{{ emotionResult }}</p>
+              <div class="emotion-image-container">
+                <el-image :src="emotionPic" class="emotion-image"></el-image>
               </div>
             </div>
+            <div v-else class="emotion-placeholder">
+              等待分析结果...
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：AI对话 -->
+        <div class="ai-chat">
+          <div class="chat-header">
+            <h2>情绪建议小助手🥴</h2>
+          </div>
+          <div class="chat-messages" ref="chatListDom">
+            <div
+                class="message"
+                v-for="(item, index) of messageList.filter((v) => v.role !== 'system')"
+                :key="item.id || index"
+            >
+              <div class="message-header">
+                <span class="role">{{ roleAlias[item.role] }}：</span>
+                <Copy
+                    class="copy-button"
+                    :content="item.content"
+                />
+              </div>
+              <div class="message-content">
+                <div
+                    class="prose"
+                    v-if="item.content"
+                >
+                  <el-image
+                      :src="item.content"
+                      v-if="item.content.startsWith('http')"
+                      class="emotion-image"
+                      lazy
+                  >
+                    <template #error>
+                      <div class="image-slot">
+                        <el-icon><icon-picture /></el-icon>
+                      </div>
+                    </template>
+                  </el-image>
+                  <div
+                      v-else
+                      v-html="md.render(item.content)">
+                  </div>
+                </div>
+                <Loding v-else/>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input">
+            <div class="icon-group">
+              <el-tooltip content="文本对话" placement="bottom" effect="light" hide-after="50">
+                <el-icon
+                    class="hov"
+                    :color="whichModel === 0 ? 'purple' : undefined"
+                    size="30px"
+                    @click="whichModel = 0"
+                >
+                  <ChatDotRound/>
+                </el-icon>
+              </el-tooltip>
+              <el-tooltip content="图像生成" placement="bottom" effect="light" hide-after="50">
+                <el-icon
+                    class="hov"
+                    :color="whichModel === 1 ? 'purple' : undefined"
+                    size="30px"
+                    @click="whichModel = 1"
+                >
+                  <PictureRounded/>
+                </el-icon>
+              </el-tooltip>
+
+            </div>
+            <input
+                class="input"
+                type="text"
+                placeholder="有什么我可以帮你的嘛✔️"
+                v-model="messageContent"
+                @keydown.enter="isTalking || sendOrSave()"
+            />
+            <button
+                class="btn"
+                :disabled="isTalking"
+                @click="sendOrSave()"
+            >
+              发送
+            </button>
           </div>
         </div>
       </div>
@@ -132,7 +150,7 @@
 import {ref, reactive, onMounted, computed, onBeforeUnmount, watch, nextTick} from 'vue';
 import {useRouter} from 'vue-router';
 import {useStore} from 'vuex';
-import {ChatLineSquare, HomeFilled, Management, VideoPlay} from '@element-plus/icons-vue';
+import {HomeFilled, Management} from '@element-plus/icons-vue';
 import {ElMessage} from 'element-plus';
 import socket from "@/socket";
 import {chat} from "@/libs/gpt";
@@ -140,26 +158,26 @@ import cryptoJS from "crypto-js";
 import Loding from "@/components/Loding.vue";
 import Copy from "@/components/Copy.vue";
 import {md} from "@/libs/markdown";
+import {draw} from "@/libs/cogview"
 
-// 将 getSecretKey 函数移到文件顶部或其他合适的位置，确保只声明一次
 const getSecretKey = () => "jun";
 
-let apiKey = "";
-let isConfig = ref(true);
+let apiKey = "6197c7ea87dc726d57a420e616cca003.0llw045tuvuNUTky";
 let isTalking = ref(false);
 let messageContent = ref("");
 const chatListDom = ref(null);
 const decoder = new TextDecoder("utf-8");
-const roleAlias = {user: "", assistant: "情绪小助手", system: "System"};
+const roleAlias = {user: "(访✪ω✪客)", assistant: "小助手🥴", system: "System"};
 const messageList = ref([
   {
     role: "system",
     content: "你是一个情感分析专家与心理健康大师，你需要根据人物的情绪和心情，给出健康建议。",
   },
 ]);
-
 const router = useRouter();
 const store = useStore();
+
+const whichModel = ref(0);
 
 const userName = ref('');
 const emotionResult = ref('');
@@ -170,6 +188,7 @@ const userAgeLow = ref(null);
 const userAgeHigh = ref(null);
 const maskStatus = ref(null);
 const analysis_context = ref('');
+
 
 onBeforeUnmount(() => {
   userName.value = '';
@@ -218,28 +237,26 @@ onMounted(async () => {
     if (response.error) {
       ElMessage.error(response.error);
     } else {
-      analysis_context.value = response;
-      messageList.value.push({role: "assistant", content: response});
+      analysis_context.value = response.answer;
+      messageList.value.push({role: "assistant", content: response.answer});
       ElMessage.success('建议分析成功');
+      apiKey = response.api_key;
     }
   });
 
-  if (getAPIKey()) {
-    switchConfigStatus();
-  }
 });
 
 const sendChatMessage = async (content = messageContent.value) => {
   try {
     isTalking.value = true;
-    // if (messageList.value.length === 2) {
-    //   messageList.value.pop();
-    // }
     messageList.value.push({role: "user", content});
     clearMessageContent();
     messageList.value.push({role: "assistant", content: ""});
-
-    const {body, status} = await chat(messageList.value, getAPIKey());
+    let body, status;
+    if (whichModel.value === 0)
+      ({body, status} = await chat(messageList.value, getAPIKey()));
+    else
+      ({body, status} = await draw(content, getAPIKey()));
     if (body) {
       const reader = body.getReader();
       await readStream(reader, status);
@@ -266,19 +283,29 @@ const readStream = async (reader, status) => {
       appendLastMessageContent(content);
       return;
     }
+    if (whichModel.value) {
+      const jsonObject = JSON.parse(decodedText);
 
-    const chunk = partialLine + decodedText;
-    const newLines = chunk.split(/\r?\n/);
+      const url = jsonObject.data[0].url;
+      console.log(url);
+      appendLastMessageContent(url);
 
-    partialLine = newLines.pop() ?? "";
 
-    for (const line of newLines) {
-      if (line.length === 0 || line.startsWith(":") || line === "data: [DONE]") continue;
+    } else {
+      const chunk = partialLine + decodedText;
+      const newLines = chunk.split(/\r?\n/);
 
-      const json = JSON.parse(line.substring(6));
-      const content = status === 200 ? json.choices[0].delta.content ?? "" : json.error.message;
-      appendLastMessageContent(content);
+      partialLine = newLines.pop() ?? "";
+
+      for (const line of newLines) {
+        if (line.length === 0 || line.startsWith(":") || line === "data: [DONE]") continue;
+
+        const json = JSON.parse(line.substring(6));
+        const content = status === 200 ? json.choices[0].delta.content ?? "" : json.error.message;
+        appendLastMessageContent(content);
+      }
     }
+
   }
 };
 
@@ -288,41 +315,15 @@ const appendLastMessageContent = (content) => {
 
 const sendOrSave = () => {
   if (!messageContent.value.length) return;
-  if (isConfig.value) {
-    if (saveAPIKey(messageContent.value.trim())) {
-      switchConfigStatus();
-    }
-    clearMessageContent();
-  } else {
-    sendChatMessage();
-  }
-};
 
-/*const clickConfig = () => {
-  if (!isConfig.value) {
-    messageContent.value = getAPIKey();
-  } else {
-    clearMessageContent();
-  }
-  switchConfigStatus();
-};*/
+  sendChatMessage();
 
-const saveAPIKey = (apiKey) => {
-  const aesAPIKey = cryptoJS.AES.encrypt(apiKey, getSecretKey()).toString();
-  localStorage.setItem("apiKey", aesAPIKey);
-  return true;
 };
 
 const getAPIKey = () => {
-  if (apiKey) return apiKey; // 修复后的代码
-  const aesAPIKey = localStorage.getItem("apiKey") ?? "";
-  apiKey = cryptoJS.AES.decrypt(aesAPIKey, getSecretKey()).toString(
-      cryptoJS.enc.Utf8
-  );
   return apiKey;
 };
 
-const switchConfigStatus = () => (isConfig.value = !isConfig.value);
 
 const clearMessageContent = () => (messageContent.value = "");
 
@@ -332,131 +333,92 @@ const scrollToBottom = () => {
 };
 
 watch(messageList, () => nextTick(() => scrollToBottom()));
+
+const getMaskStatusClass = computed(() => {
+  if (maskStatus.value === 'without_mask') return 'not-wearing';
+  if (maskStatus.value === 'with_mask') return 'wearing';
+  return 'undetected';
+});
 </script>
 
 <style scoped>
 .layout {
   display: flex;
   min-height: 100vh;
+  /* background-color: #f4f4f9; */
 }
 
 .simple-sidebar {
   width: 200px;
-  padding: 1rem;
   background-color: #f8f9fa;
+  padding: 2rem 0;
+  border-right: 1px solid #e0e0e0;
 }
 
 .logo h2 {
-  font-size: 1.5rem;
+  padding: 0 1.5rem;
   margin-bottom: 2rem;
-  color: var(--primary-color);
+  color: #333333;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   color: var(--text-color);
   text-decoration: none;
-  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
 .nav-link:hover {
-  color: var(--primary-color);
+  background-color: #f0f0f0;
+}
+
+.nav-link.active {
+  background-color: var(--primary-color);
+  color: white;
 }
 
 .content {
   flex: 1;
+  height: 80vh;
   padding: 2rem;
 }
 
 .camera-container {
-  max-width: 1400px; /* 增加最大宽度以适应新布局 */
+  max-width: 1400px;
+  height: 80vh;
   margin: 0 auto;
-  /*padding: 2rem;*/
-}
-
-/* 新增头部区域样式 */
-.header-section {
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.welcome-title {
-  font-size: 2.5rem;
-  color: var(--primary-color);
-  font-weight: 600;
-  margin: 0;
-}
-
-.user-info {
-  margin-top: 1rem;
   display: flex;
-  justify-content: center;
   gap: 2rem;
 }
 
-.info-item {
-  margin: 0;
-  font-size: 1.2rem;
-  color: #333;
-}
-
-.mask-status {
-  font-weight: normal;
-  color: #333;
-}
-
-.mask-status.wearing {
-  color: #67c23a;
-}
-
-.mask-status.not-wearing {
-  color: #f56c6c;
-}
-
-.mask-status.undetected {
-  color: #333;
-}
-
-/* 新增主要内容区布局 */
 .main-content {
   display: flex;
-  gap: 3rem;
+  flex-direction: column;
+  gap: 1rem;
+  width: 50%;
 }
 
-/* 左侧上传区域 */
-.capture-section {
-  flex: 0 0 auto; /* 保持固定宽度 */
-}
-
-.image-container {
-  position: relative;
-  width: 600px;
-  height: 400px;
-}
-
-.image-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 20px;
-  color: white;
+.user-info-section {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .welcome-title {
   font-size: 1.8rem;
-  margin: 0 0 10px 0;
-  color: white;
+  margin: 0;
+  color: #333333;
 }
 
 .info-item {
-  margin: 5px 0;
-  font-size: 1.1rem;
-  color: white;
+  margin: 0.5rem 0;
+  font-size: 1.2rem;
+  color: #666666;
 }
 
 .mask-status {
@@ -464,332 +426,156 @@ watch(messageList, () => nextTick(() => scrollToBottom()));
 }
 
 .mask-status.wearing {
-  color: #67c23a;
+  color: #4caf50;
 }
 
 .mask-status.not-wearing {
-  color: #f56c6c;
+  color: #f44336;
 }
 
 .mask-status.undetected {
-  color: #e6e6e6;
+  color: #999999;
 }
 
-/* 删除不需要的样式 */
-.analyze-button-container,
-.header-section {
-  display: none;
+.emotion-box {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.image-uploader {
-  border: 2px dashed var(--secondary-color);
-  border-radius: 12px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s;
+.emotion-box h4 {
+  margin: 0;
+  color: #333333;
+  font-size: 1.4rem;
 }
 
-.image-uploader:hover {
-  border-color: var(--primary-color);
+.emotion-content {
+  margin-top: 1rem;
 }
 
-/* 增大上传框尺寸 */
-.upload-placeholder {
-  width: 600px; /* 增加宽度 */
-  height: 400px; /* 增加高度 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: var(--text-color);
-}
-
-/* 增大预览图尺寸 */
-.preview-image {
-  width: 600px; /* 增加宽度 */
-  height: 400px; /* 增加高度 */
-  object-fit: cover;
-}
-
-.upload-icon {
-  font-size: 4rem; /* 增大图标尺寸 */
-  margin-bottom: 1.5rem;
-}
-
-.upload-text {
-  font-size: 1.2rem; /* 增大提示文字尺寸 */
-}
-
-.analyze-button-container {
-  margin-top: 2rem; /* 增加与上传框的间距 */
+.emotion-image-container {
+  margin-top: 1rem;
   text-align: center;
 }
 
-.button-icon {
-  margin-right: 8px;
-}
-
-.header {
-  padding: 10px;
-  background-color: #dfffdf;
+.emotion-image {
+  max-width: 100%;
   border-radius: 8px;
-
 }
 
-/* 右侧结果区域 */
-.result-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  min-width: 400px;
+.emotion-placeholder {
+  margin-top: 1rem;
+  height: 53vh;
+  text-align: center;
+  color: #999999;
 }
 
-.result-card {
-  margin-bottom: 1rem;
-}
-
-.emotion-text {
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-}
-
-.suggestion-text {
-  color: #666;
-  line-height: 1.6;
-}
-
-.chat-section {
-  flex: 1;
+.ai-chat {
+  height: 85vh;
+  width: 50%;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding: 1rem;
+}
+
+.chat-header {
+  background-color: #f0f0f0;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  text-align: center;
 }
 
 .chat-messages {
   flex: 1;
-  min-height: 300px;
-  max-height: 400px;
   overflow-y: auto;
-  border: 1px solid #eee;
-  border-radius: 8px;
   padding: 1rem;
-  background: #f9f9f9;
 }
 
 .message {
   margin-bottom: 1rem;
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  max-width: 80%;
+  background-color: #f9f9f9;
 }
 
-.message.user {
-  background: var(--primary-color);
-  color: white;
-  margin-left: auto;
-}
-
-.message.ai {
-  background: white;
-  border: 1px solid #ddd;
-  margin-right: auto;
-}
-
-.chat-input {
-  margin-top: auto;
-}
-
-:deep(.el-input-group__append) {
-  padding: 0;
-}
-
-.analysis-section {
+.message-header {
   display: flex;
-  padding: 20px;
-  gap: 20px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
-.emotion-results {
-  flex: 1;
-  padding: 20px;
-  border-right: 1px solid #eee;
+.role {
+  font-weight: 600;
+  color: #333333;
 }
 
-.ai-chat {
-  flex: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background-color: #f8f9fa;
-  border: 2px solid #000;
-  border-radius: 10px;
-
-
-}
-
-.ai-chat .sticky {
-  z-index: 10;
-}
-
-.ai-chat .flex-1 {
-  /*margin-top: 60px;*/ /* 根据实际情况调整 */
-}
-
-.flex-1 {
-  height: 600px;
-  overflow-y: auto;
-}
-
-.chat-container {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fff;
-  margin-bottom: 10px;
-}
-
-.ai-chat h4 {
-  margin: 0;
-  color: #333;
-  font-size: 16px;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-}
-
-.chat-messages {
-  height: 500px;
-  overflow-y: auto;
-  padding: 10px;
-}
-
-.chat-input {
-  display: flex;
-  gap: 8px;
-  padding: 15px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 100%;
-}
-
-.chat-input input {
-  flex: 1;
-  padding: 15px;
-  font-size: 14px;
-  border: 1px solid #ddd;
-  border-radius: 100%;
-
-
-}
-
-.chat-input button {
-  padding: 15px 25px;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 20px;
+.copy-button {
   cursor: pointer;
-  font-size: 14px;
+  color: #007bff;
 }
 
-.chat-input button:hover {
-  opacity: 0.9;
+.message-content {
+  font-size: 1rem;
+  color: #666666;
 }
 
-.emotion-box {
-  /*margin-top: 20px;*/
-  background-color: #f8f9fa;
-  width: 600px;
-  border: 1px solid #000;
-  border-radius: 8px;
-  /*background-color: #fff;*/
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  min-height: 300px;
+.chat-input {
+  display: flex;
+  gap: 0.5rem;
+  height: 4vh;
+  align-items: center; /* 新增垂直居中 */
 }
 
-.emotion-box h4 {
-  margin-left: 20px;
-  margin-bottom: -10px;
-  color: #333;
-  font-size: 20px;
-}
-
-.emotion-content {
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  min-height: 220px;
-}
-
-.emotion-placeholder {
-  color: #999;
-  text-align: center;
-  padding: 40px 0;
-  min-height: 220px;
+.icon-group {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  cursor: pointer;
 }
 
-.emotion-content p {
-  margin: 5px 0 10px 0;
-  font-size: 20px;
-  line-height: 1.5;
+.hov {
+
 }
 
-.user-info-container {
-  width: 600px;
-  height: 300px;
-  background-color: #f8f9fa;
-  border: 1px solid #000;
+.hov:hover {
+  color: #D3D2FF;
+}
+
+.input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
+  font-size: 1rem;
 }
 
-.user-info {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+
+.btn {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.welcome-title {
-  font-size: 2rem;
-  color: var(--primary-color);
-  margin: 0;
+.btn:hover {
+  background-color: #0056b3;
 }
 
-.info-item {
-  margin: 0;
-  font-size: 1.2rem;
-  color: #333;
+.btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
-
-.mask-status {
-  font-weight: 500;
-}
-
-.mask-status.wearing {
-  color: #67c23a;
-}
-
-.mask-status.not-wearing {
-  color: #f56c6c;
-}
-
-.mask-status.undetected {
-  color: #909399;
-}
-
-/* 删除不需要的样式 */
-.image-container,
-.image-overlay,
-.preview-image,
-.analyze-button-container,
-.header-section {
-  display: none;
-}
-</style> 
+</style>
