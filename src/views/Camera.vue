@@ -162,7 +162,7 @@ import {draw} from "@/libs/cogview"
 
 const getSecretKey = () => "jun";
 
-let apiKey = "6197c7ea87dc726d57a420e616cca003.0llw045tuvuNUTky";
+let apiKey = "";
 let isTalking = ref(false);
 let messageContent = ref("");
 const chatListDom = ref(null);
